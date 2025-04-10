@@ -1,0 +1,43 @@
+name: Static Web Scraper Workflow
+
+on:
+  # 每日執行，使用 cron 語法設定每天 UTC 時間 10:00 執行
+  schedule:
+    - cron: '0 10 * * *'
+
+  # 手動觸發
+  workflow_dispatch:
+
+jobs:
+  run-scraper:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 檢出 GitHub Repository
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      # 設定 Python 環境
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9' # 指定 Python 版本
+
+      # 安裝所需的 Python 套件
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # 執行靜態爬蟲程式
+      - name: Run static.py script
+        run: python static.py
+
+      # 提交爬蟲結果到 Repository（可選）
+      - name: Commit and push results
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add static.json static.csv
+          git commit -m "Update scraped data"
+          git push origin main
