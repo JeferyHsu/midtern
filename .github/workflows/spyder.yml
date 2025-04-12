@@ -11,6 +11,10 @@ jobs:
     timeout-minutes: 30 # 設置超時時間為 30 分鐘
 
     steps:
+      # 更新 GitHub Actions 資源
+      - name: Update GitHub Actions resources
+        run: sudo apt-get update && sudo apt-get install -y git
+
       # 檢出 GitHub Repository
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -46,12 +50,12 @@ jobs:
       - name: Save logs to folder
         if: ${{ failure() }}
         run: |
-          mkdir -p logs && mv *.log logs/
+          mkdir -p logs && mv *.log logs/ || echo "No log files found"
 
-      # 上傳執行日誌（失敗時）
+      # 上傳執行日誌（失敗時）- 嘗試使用 v1 版本
       - name: Upload logs as artifact
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v2 # 使用穩定版本 v2 或 v3（視情況而定）
+        uses: actions/upload-artifact@v1
         with:
           name: execution-logs
           path: logs/
@@ -71,6 +75,3 @@ jobs:
       - name: Debug with tmate
         if: ${{ failure() }}
         uses: mxschmitt/action-tmate@v3
-
-      - name: Update GitHub Actions resources
-        run: sudo apt-get update && sudo apt-get install -y git
