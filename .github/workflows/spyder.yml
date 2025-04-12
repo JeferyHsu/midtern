@@ -1,11 +1,8 @@
 name: Static Web Scraper Workflow
 
 on:
-  # 每日執行，使用 cron 語法設定每天 UTC 時間 10:00 執行
   schedule:
-    - cron: '0 10 * * *'
-
-  # 手動觸發工作流
+    - cron: '0 10 * * *' # 每日 UTC 時間 10:00 執行
   workflow_dispatch:
 
 jobs:
@@ -22,7 +19,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.9' # 指定 Python 版本
+          python-version: '3.9'
 
       # 緩存 pip 套件以加速依賴安裝
       - name: Cache pip packages
@@ -45,11 +42,15 @@ jobs:
           python static.py || echo "::error::Script execution failed"
         shell: bash
 
-      # 保存執行日誌（可選）
-      - name: Save logs as artifact
+      # 保存執行日誌到資料夾（失敗時）
+      - name: Save logs to folder
         if: ${{ failure() }}
         run: |
           mkdir -p logs && mv *.log logs/
+
+      # 上傳執行日誌（失敗時）
+      - name: Upload logs as artifact
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v3
         with:
           name: execution-logs
