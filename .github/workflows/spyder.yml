@@ -5,12 +5,13 @@ on:
   schedule:
     - cron: '0 10 * * *'
 
-  # 手動觸發
+  # 手動觸發工作流
   workflow_dispatch:
 
 jobs:
   run-scraper:
     runs-on: ubuntu-latest
+    timeout-minutes: 30 # 設置超時時間為 30 分鐘
 
     steps:
       # 檢出 GitHub Repository
@@ -23,21 +24,49 @@ jobs:
         with:
           python-version: '3.9' # 指定 Python 版本
 
+      # 緩存 pip 套件以加速依賴安裝
+      - name: Cache pip packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
       # 安裝所需的 Python 套件
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install --force-reinstall -r requirements.txt
 
       # 執行靜態爬蟲程式
       - name: Run static.py script
-        run: python static.py
+        run: |
+          python static.py || echo "::error::Script execution failed"
+        shell: bash
+
+      # 保存執行日誌（可選）
+      - name: Save logs as artifact
+        if: ${{ failure() }}
+        run: |
+          mkdir -p logs && mv *.log logs/
+        uses: actions/upload-artifact@v3
+        with:
+          name: execution-logs
+          path: logs/
 
       # 提交爬蟲結果到 Repository（可選）
       - name: Commit and push results
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add static.json static.csv
-          git commit -m "Update scraped data"
-          git push origin main
+          git add static.json static.csv || echo "No changes to commit"
+          git commit -m "Update scraped data" || echo "Nothing to commit"
+          git push origin main || echo "Nothing to push"
+
+      # 調試工具（僅在失敗時啟用）
+      - name: Debug with tmate
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
