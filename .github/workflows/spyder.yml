@@ -52,10 +52,10 @@ jobs:
         run: |
           mkdir -p logs && mv *.log logs/ || echo "No log files found"
 
-      # 上傳執行日誌（失敗時）- 嘗試使用 v1 版本
+      # 上傳執行日誌（失敗時）
       - name: Upload logs as artifact
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v3 # 使用最新穩定版本 v3
         with:
           name: execution-logs
           path: logs/
