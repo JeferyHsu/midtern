@@ -51,7 +51,7 @@ jobs:
       # 上傳執行日誌（失敗時）
       - name: Upload logs as artifact
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v3 # 使用最新穩定版本 v3
+        uses: actions/upload-artifact@v4 # 使用最新穩定版本 v4
         with:
           name: execution-logs
           path: logs/
