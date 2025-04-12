@@ -11,6 +11,10 @@ jobs:
     timeout-minutes: 30 # 設置超時時間為 30 分鐘
 
     steps:
+      # 更新 GitHub Actions 資源（可選）
+      - name: Update GitHub Actions resources
+        run: sudo apt-get update && sudo apt-get install -y git
+
       # 檢出 GitHub Repository
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -21,7 +25,7 @@ jobs:
         with:
           python-version: '3.9'
 
-      # 緩存 pip 套件以加速依賴安裝
+      # 緩存 pip 套件以加速依賴安裝（可選）
       - name: Cache pip packages
         uses: actions/cache@v3
         with:
@@ -30,17 +34,24 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      # 安裝所需的 Python 套件
+      # 安裝所需的 Python 套件（確保 requirements.txt 存在）
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install --force-reinstall -r requirements.txt
+          if [ -f requirements.txt ]; then
+            python -m pip install --upgrade pip
+            pip install --force-reinstall -r requirements.txt
+          else
+            echo "requirements.txt 不存在，跳過依賴安裝"
+          fi
 
-      # 執行靜態爬蟲程式
+      # 執行靜態爬蟲程式（確保 static.py 存在）
       - name: Run static.py script
         run: |
-          python static.py || echo "::error::Script execution failed"
-        shell: bash
+          if [ -f static.py ]; then
+            python static.py || echo "::error::Script execution failed"
+          else
+            echo "static.py 不存在，跳過執行"
+          fi
 
       # 保存執行日誌到資料夾（失敗時）
       - name: Save logs to folder
@@ -55,6 +66,14 @@ jobs:
         with:
           name: execution-logs
           path: logs/
+
+      # 配置 SSH（用於推送到儲存庫）
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
 
       # 提交爬蟲結果到 Repository（可選）
       - name: Commit and push results
