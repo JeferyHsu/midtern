@@ -1,29 +1,17 @@
-name: Print Repo Info
+name: Test Runner Connectivity
 
 on:
   workflow_dispatch:
 
 jobs:
-  print-info:
+  test-connectivity:
     runs-on: ubuntu-latest
 
     steps:
-      # 檢出儲存庫
-      - name: Checkout Repository
-        uses: actions/checkout@v2
+      # 測試是否能連線到 GitHub API
+      - name: Test GitHub API connectivity
+        run: curl -I https://api.github.com
 
-      # 打印完整儲存庫名稱（包含擁有者）
-      - name: Print Full Repository Name
-        run: echo "${{ github.repository }}"
-
-      # 提取僅儲存庫名稱（不包含擁有者）
-      - name: Extract Repository Name
-        run: echo "${{ github.repository }}" | awk -F'/' '{print $2}'
-
-      # 打印工作目錄路徑
-      - name: Print Working Directory
-        run: pwd
-
-      # 打印儲存庫文件列表
-      - name: List Repository Files
-        run: ls -la
+      # 測試是否能下載 Actions 資源
+      - name: Test Actions resource connectivity
+        run: curl -I https://pkg.actions.githubusercontent.com
